@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>hoangminhofficial — Secure Offline (Full)</title>
+<style>
+:root{--bg:#060709;--card:#0f1114;--muted:#9aa3b2;--accent:#7c5cff;--ok:#2ecc71;--warn:#ffb86b;--bad:#ff6b6b}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#020204,#060709);color:#e6eef8;min-height:100vh}
+.container{max-width:1000px;margin:18px auto;padding:16px}
+.card{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+.header{display:flex;gap:12px;align-items:center}
+.header h1{margin:0;font-size:18px}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+.col{flex:1;min-width:260px}
+label{display:block;font-weight:700;margin-bottom:6px;color:#dbe9ff}
+input,textarea,select,button{font-size:14px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#0b0c0f;color:#e8f3ff;outline:none}
+textarea{min-height:120px;resize:vertical}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+button{background:var(--accent);border:0;color:#fff;cursor:pointer}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.05)}
+.small{color:var(--muted);font-size:12px;margin-top:6px}
+.pw-meter{height:10px;border-radius:6px;background:#0d0f13;margin-top:6px;overflow:hidden}
+.pw-meter > i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff7b7b,#7c5cff);transition:width .18s}
+.status{margin-top:12px;padding:8px;border-radius:8px;color:#07080a}
+.status.ok{background:var(--ok)}
+.status.warn{background:var(--warn)}
+.status.err{background:var(--bad)}
+.footer{font-size:12px;color:var(--muted);margin-top:12px}
+.kv{font-size:12px;color:var(--muted)}
+.top-controls{display:flex;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <div style="font-size:28px">🔐</div>
+      <div>
+        <h1>hoangminhofficial — Secure Offline (Full)</h1>
+        <div class="small">Offline trên trình duyệt • PBKDF2 → (tuỳ chọn obf) → AES-GCM • HMAC SHA-256 tích hợp</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <div class="col">
+        <label>Mật khẩu</label>
+        <div style="display:flex;gap:8px">
+          <input id="pw" type="password" placeholder="Nhập mật khẩu (dài & mạnh)"/>
+          <button id="genPw" class="btn-ghost">Tạo</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <label style="display:flex;align-items:center;gap:6px"><input id="showPw" type="checkbox"/> Hiện mật khẩu</label>
+          <div style="margin-left:auto" id="pwLabel" class="kv">Độ mạnh: —</div>
+        </div>
+        <div class="pw-meter"><i id="pwBar"></i></div>
+      </div>
+
+      <div style="width:260px">
+        <label>TTL (ngày) — tuỳ chọn</label>
+        <input id="ttl" type="text" placeholder="Số ngày (ví dụ 7)"/>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+          <label style="display:flex;align-items:center;gap:6px"><input id="autoClear" type="checkbox"/> Auto-clear</label>
+          <select id="autoSec" style="margin-left:auto;padding:6px">
+            <option value="0">0s</option><option value="5">5s</option><option value="10">10s</option><option value="30">30s</option><option value="60">60s</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <label>Văn bản (Plain)</label>
+        <textarea id="plain" placeholder="Nhập nội dung cần mã hoá..."></textarea>
+        <div class="controls">
+          <button id="btnEnc">Mã hoá</button>
+          <button id="dlEnc" class="btn-ghost">Tải (.txt)</button>
+          <button id="copyEnc" class="btn-ghost">Copy mã</button>
+          <button id="dataUrl" class="btn-ghost">Data-URL</button>
+        </div>
+        <div class="small">Tùy chọn obfuscation trước AES sẽ làm rối dữ liệu hơn (vẫn reversible với mật khẩu đúng).</div>
+      </div>
+
+      <div class="col">
+        <label>Chuỗi (Base64 gói)</label>
+        <textarea id="cipher" placeholder="Kết quả Base64 (gói JSON) sẽ hiển thị ở đây"></textarea>
+        <div class="controls">
+          <button id="btnDec">Giải mã</button>
+          <button id="dlDec" class="btn-ghost">Tải văn bản</button>
+          <button id="copyDec" class="btn-ghost">Copy text</button>
+          <button id="clearAll" class="btn-ghost">Xoá</button>
+        </div>
+        <div class="small">Dán chuỗi Base64 vào đây rồi bấm Giải mã (cần mật khẩu đúng). Nếu HMAC bật thì sẽ kiểm tra tính toàn vẹn.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px">
+      <label>Tùy chọn</label>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px">
+        <label><input id="optObf" type="checkbox"/> Bật obfuscation (XOR→S-box→rotate→shuffle)</label>
+        <label><input id="optHmac" type="checkbox"/> Thêm HMAC (SHA-256)</label>
+        <label><input id="optCompact" type="checkbox" checked/> Gói JSON (Base64)</label>
+        <div style="margin-left:auto" class="kv">PBKDF2 iterations: <strong id="iter">200000</strong></div>
+      </div>
+    </div>
+
+    <div id="status" style="margin-top:12px"></div>
+    <div class="footer">Lưu ý: nếu quên mật khẩu, không thể giải mã. Không dùng cho hành vi phi pháp.</div>
+  </div>
+</div>
+
+<script>
+/* Full offline secure messenger (compact) */
+/* ---------- Utilities ---------- */
+const enc = new TextEncoder(), dec = new TextDecoder();
+const ITER = 200000; document.getElementById('iter').textContent = ITER;
+const toB64 = u=>{let s=''; const ch=0x8000; for(let i=0;i<u.length;i+=ch) s+=String.fromCharCode.apply(null,u.subarray(i,i+ch)); return btoa(s)};
+const fromB64 = s=>{ const b=atob(s); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u};
+const rand = n=>{ const a=new Uint8Array(n); crypto.getRandomValues(a); return a};
+
+/* ---------- Crypto helpers (PBKDF2, AES-GCM, HMAC) ---------- */
+async function deriveKeys(password, salt){
+  const base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits','deriveKey']);
+  // AES key
+  const aesKey = await crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations: ITER, hash: 'SHA-256'},
+    base,
+    {name:'AES-GCM', length: 256},
+    false,
+    ['encrypt','decrypt']
+  );
+  // seed bytes for obfuscation
+  const bits = await crypto.subtle.deriveBits(
+    {name:'PBKDF2', salt, iterations: ITER, hash: 'SHA-256'},
+    base,
+    256
+  );
+  const seed = new Uint8Array(bits);
+  // HMAC key (if supported)
+  let hmacKey = null;
+  try{
+    hmacKey = await crypto.subtle.deriveKey(
+      {name:'PBKDF2', salt, iterations: ITER, hash: 'SHA-256'},
+      base,
+      {name:'HMAC', hash:'SHA-256', length:256},
+      false,
+      ['sign','verify']
+    );
+  }catch(e){ hmacKey = null; }
+  return {aesKey, seed, hmacKey};
+}
+
+async function aesEncrypt(aesKey, iv, data){ return new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, aesKey, data)); }
+async function aesDecrypt(aesKey, iv, data){ return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM', iv}, aesKey, data)); }
+async function hmacSign(key, data){ if(!key) return null; return new Uint8Array(await crypto.subtle.sign('HMAC', key, data)); }
+
+/* ---------- Obfuscation helpers (deterministic from seed) ---------- */
+/* seeded PRNG (xmur3 + mulberry32) */
+function xmur3Bytes(bs){ let h = 1779033703 ^ bs.length; for(let i=0;i<bs.length;i++){ h = Math.imul(h ^ bs[i], 3432918353); h = (h<<13) | (h>>>19); } return function(){ h = Math.imul(h ^ (h>>>16), 2246822507); h = Math.imul(h ^ (h>>>13), 3266489909); return (h ^= h>>>16) >>> 0; } }
+function mulberry32(a){ return function(){ var t = (a += 0x6D2B79F5) >>> 0; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
+
+/* reverse bits table */
+const revTable = (function(){ const t=new Uint8Array(256); for(let i=0;i<256;i++){ let v=i,r=0; for(let b=0;b<8;b++){ r=(r<<1)|(v&1); v>>=1 } t[i]=r } return t })();
+
+function makeSBox(seedBytes){ const sf = xmur3Bytes(seedBytes); const rnd = mulberry32(sf()); const arr = new Uint8Array(256); for(let i=0;i<256;i++) arr[i]=i; for(let i=255;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]] } return arr; }
+function invSBox(s){ const inv = new Uint8Array(256); for(let i=0;i<256;i++) inv[s[i]]=i; return inv; }
+function rotL(b,n){ return ((b<<n)&0xFF) | (b>>(8-n)); }
+function rotR(b,n){ return ((b>>n) | ((b<<(8-n))&0xFF)) & 0xFF; }
+
+function xorStream(len, seed){ const sf = xmur3Bytes(seed); const rnd = mulberry32(sf()); const out = new Uint8Array(len); for(let i=0;i<len;i++) out[i] = Math.floor(rnd()*256); return out; }
+
+function shuffleBytes(bytes, seed){ const sf = xmur3Bytes(seed); const rnd = mulberry32(sf()); const a = Array.from(bytes); for(let i=a.length-1;i>0;i--){ const j = Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return new Uint8Array(a); }
+function unshuffleBytes(bytes, seed){ const sf = xmur3Bytes(seed); const rnd = mulberry32(sf()); const n = bytes.length; const idx = Array.from({length:n}, (_,i)=>i); for(let i=n-1;i>0;i--){ const j = Math.floor(rnd()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]] } const out = new Uint8Array(n); for(let pos=0; pos<n; pos++){ const orig = idx[pos]; out[orig] = bytes[pos]; } return out; }
+
+/* obfuscate: XOR -> Sbox -> rotate -> shuffle */
+function obfuscate(bytes, seed){
+  if(bytes.length===0) return bytes;
+  const ks = xorStream(bytes.length, seed);
+  const x = new Uint8Array(bytes.length); for(let i=0;i<bytes.length;i++) x[i]=bytes[i]^ks[i];
+  const sbox = makeSBox(seed);
+  let tmp = new Uint8Array(bytes.length); for(let i=0;i<bytes.length;i++) tmp[i]=sbox[x[i]];
+  // rotation seq
+  const sf = xmur3Bytes(seed); const rnd = mulberry32(sf());
+  const rot = new Uint8Array(bytes.length); for(let i=0;i<rot.length;i++) rot[i]=Math.floor(rnd()*8);
+  for(let i=0;i<tmp.length;i++) tmp[i]=rotL(tmp[i], rot[i]);
+  return shuffleBytes(tmp, seed);
+}
+
+/* unobfuscate: unshuffle -> rotateR -> invS -> xor */
+function unobfuscate(bytes, seed){
+  if(bytes.length===0) return bytes;
+  const unsh = unshuffleBytes(bytes, seed);
+  const sf = xmur3Bytes(seed); const rnd = mulberry32(sf());
+  const rot = new Uint8Array(unsh.length); for(let i=0;i<rot.length;i++) rot[i]=Math.floor(rnd()*8);
+  const tmp = new Uint8Array(unsh.length); for(let i=0;i<unsh.length;i++) tmp[i]=rotR(unsh[i], rot[i]);
+  const sbox = makeSBox(seed); const inv = invSBox(sbox);
+  const afterS = new Uint8Array(tmp.length); for(let i=0;i<tmp.length;i++) afterS[i]=inv[tmp[i]];
+  const ks = xorStream(afterS.length, seed);
+  const out = new Uint8Array(afterS.length); for(let i=0;i<afterS.length;i++) out[i]=afterS[i]^ks[i];
+  return out;
+}
+
+/* ---------- High-level flows ---------- */
+async function encryptFlow(plain, password, opts){
+  if(!password) throw new Error('Nhập mật khẩu.');
+  const salt = rand(16);
+  const {aesKey, seed, hmacKey} = await deriveKeys(password, salt);
+  let bytes = enc.encode(plain);
+  if(opts.obf) bytes = obfuscate(bytes, seed);
+  const iv = rand(12);
+  const cipherBytes = await aesEncrypt(aesKey, iv, bytes);
+  let mac = null;
+  if(opts.hmac && hmacKey){
+    const macBytes = await hmacSign(hmacKey, cipherBytes);
+    mac = toB64(macBytes);
+  }
+  const pkg = {
+    v:1,
+    ts: Date.now(),
+    ttl: opts.ttl || null,
+    obf: !!opts.obf,
+    salt: toB64(salt),
+    iv: toB64(iv),
+    cipher: toB64(cipherBytes),
+    mac: mac
+  };
+  return opts.compact ? btoa(JSON.stringify(pkg)) : btoa(JSON.stringify(pkg));
+}
+
+async function decryptFlow(b64pkg, password){
+  let json;
+  try{ json = atob(b64pkg); }catch(e){ throw new Error('Không phải Base64 hợp lệ'); }
+  let pkg;
+  try{ pkg = JSON.parse(json); }catch(e){ throw new Error('Gói không đúng định dạng'); }
+  if(!pkg.salt || !pkg.iv || !pkg.cipher) throw new Error('Gói thiếu trường bắt buộc');
+  const salt = fromB64(pkg.salt), iv = fromB64(pkg.iv), cipherBytes = fromB64(pkg.cipher);
+  const {aesKey, seed, hmacKey} = await deriveKeys(password, salt);
+  if(pkg.mac && hmacKey){
+    const got = toB64(await hmacSign(hmacKey, cipherBytes));
+    if(got !== pkg.mac) throw new Error('HMAC không khớp — mật khẩu sai hoặc dữ liệu đã bị sửa đổi');
+  }
+  const plainOrObf = await aesDecrypt(aesKey, iv, cipherBytes);
+  let out = plainOrObf;
+  if(pkg.obf) out = unobfuscate(out, seed);
+  return {text: dec.decode(out), meta: {ts: pkg.ts, ttl: pkg.ttl, obf: pkg.obf}};
+}
+
+/* ---------- UI wiring ---------- */
+const pw = document.getElementById('pw'), showPw = document.getElementById('showPw'), genPw = document.getElementById('genPw');
+const plainEl = document.getElementById('plain'), cipherEl = document.getElementById('cipher');
+const btnEnc = document.getElementById('btnEnc'), btnDec = document.getElementById('btnDec');
+const copyEnc = document.getElementById('copyEnc'), copyDec = document.getElementById('copyDec');
+const dlEnc = document.getElementById('dlEnc'), dlDec = document.getElementById('dlDec');
+const optObf = document.getElementById('optObf'), optHmac = document.getElementById('optHmac'), optCompact = document.getElementById('optCompact');
+const statusBox = document.getElementById('status'), pwLabel = document.getElementById('pwLabel'), pwBar = document.getElementById('pwBar');
+const ttl = document.getElementById('ttl'), autoClear = document.getElementById('autoClear'), autoSec = document.getElementById('autoSec');
+
+showPw.addEventListener('change', ()=> pw.type = showPw.checked ? 'text' : 'password');
+genPw.addEventListener('click', ()=> {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}<>?,.";
+  const len = 24; const arr = new Uint8Array(len); crypto.getRandomValues(arr);
+  let s = ''; for(let i=0;i<len;i++) s += chars[arr[i] % chars.length];
+  pw.value = s; pw.dispatchEvent(new Event('input')); setStatus('Đã tạo mật khẩu ngẫu nhiên', 'ok');
+});
+
+function setStatus(msg, cls='ok'){ statusBox.innerHTML = `<div class="status ${cls}">${msg}</div>`; }
+function strengthScore(s){ if(!s) return 0; let v=0; if(s.length>=12) v+=2; else if(s.length>=8) v+=1; if(/[a-z]/.test(s)) v++; if(/[A-Z]/.test(s)) v++; if(/[0-9]/.test(s)) v++; if(/[^A-Za-z0-9]/.test(s)) v++; return Math.min(v,6); }
+pw.addEventListener('input', ()=> {
+  const sc = strengthScore(pw.value); const labels = ['Very weak','Weak','Okay','Good','Strong','Very strong','Excellent'];
+  pwLabel.textContent = 'Độ mạnh: ' + labels[sc]; const w = Math.round((sc/6)*100); pwBar.style.width = w + '%';
+  pwBar.style.background = sc<=1 ? 'linear-gradient(90deg,#ff6b6b,#ff7b7b)' : sc<=3 ? 'linear-gradient(90deg,#ffb86b,#ffd27a)' : 'linear-gradient(90deg,#7c5cff,#2ecc71)';
+});
+
+btnEnc.addEventListener('click', async ()=> {
+  try{
+    setStatus('Đang mã hoá…', 'ok');
+    const p = plainEl.value || '', k = pw.value || '';
+    if(!k){ setStatus('Nhập mật khẩu trước khi mã hoá', 'err'); return; }
+    if(k.length < 6) setStatus('Cảnh báo: mật khẩu ngắn', 'warn');
+    const opts = {obf: optObf.checked, hmac: optHmac.checked, ttl: (ttl.value ? Number(ttl.value) : null), compact: optCompact.checked};
+    const out = await encryptFlow(p, k, opts);
+    cipherEl.value = out;
+    setStatus('Mã hoá xong — sao chép hoặc tải chuỗi', 'ok');
+  }catch(e){ console.error(e); setStatus('Lỗi: ' + e.message, 'err'); }
+});
+
+btnDec.addEventListener('click', async ()=> {
+  try{
+    setStatus('Đang giải mã…', 'ok');
+    const b64 = cipherEl.value.trim(), k = pw.value || '';
+    if(!b64){ setStatus('Dán chuỗi để giải mã', 'err'); return; }
+    if(!k){ setStatus('Nhập mật khẩu để giải mã', 'err'); return; }
+    const res = await decryptFlow(b64, k);
+    plainEl.value = res.text;
+    if(res.meta.ttl){ const exp = new Date(res.meta.ts + res.meta.ttl*24*3600*1000); if(Date.now() > exp.getTime()) setStatus('Cảnh báo: tin đã quá TTL', 'warn'); else setStatus('Giải mã xong — trong hạn TTL', 'ok'); } else setStatus('Giải mã xong', 'ok');
+    if(autoClear.checked && Number(autoSec.value)>0){ setTimeout(()=>{ plainEl.value = ''; setStatus('Nội dung đã tự xoá', 'ok'); }, Number(autoSec.value)*1000); }
+  }catch(e){ console.error(e); setStatus('Lỗi giải mã: ' + e.message, 'err'); }
+});
+
+copyEnc.addEventListener('click', ()=> navigator.clipboard.writeText(cipherEl.value).then(()=>setStatus('Đã copy'), ()=>setStatus('Không thể copy','err')));
+copyDec.addEventListener('click', ()=> navigator.clipboard.writeText(plainEl.value).then(()=>setStatus('Đã copy'), ()=>setStatus('Không thể copy','err')));
+dlEnc.addEventListener('click', ()=> { const fname = prompt('Tên file mã (.txt):','cipher.txt')||'cipher.txt'; const b = new Blob([cipherEl.value], {type:'text/plain;charset=utf-8'}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = fname; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(u); });
+dlDec.addEventListener('click', ()=> { const fname = prompt('Tên file văn bản (.txt):','plain.txt')||'plain.txt'; const b = new Blob([plainEl.value], {type:'text/plain;charset=utf-8'}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = fname; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(u); });
+
+document.getElementById('clearAll').addEventListener('click', ()=> { plainEl.value=''; cipherEl.value=''; pw.value=''; ttl.value=''; setStatus('Đã xoá toàn bộ','ok'); });
+
+document.getElementById('dataUrl').addEventListener('click', ()=> {
+  const s = cipherEl.value.trim(); if(!s){ setStatus('Không có chuỗi để tạo data-URL','err'); return; }
+  const url = location.href.split('#')[0] + '#cipher=' + encodeURIComponent(s);
+  navigator.clipboard.writeText(url).then(()=>setStatus('Data-URL đã copy vào clipboard','ok'), ()=>setStatus('Không thể copy data-URL','err'));
+});
+
+/* load from fragment */
+window.addEventListener('load', ()=> {
+  const frag = location.hash.slice(1);
+  if(frag.startsWith('cipher=')){ cipherEl.value = decodeURIComponent(frag.slice(7)); setStatus('Chuỗi nạp từ data-URL (dán mật khẩu để giải)','ok'); } else setStatus('Sẵn sàng — mọi thao tác offline','ok');
+});
+</script>
+</body>
+</html>
