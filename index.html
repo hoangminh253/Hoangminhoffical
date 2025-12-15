@@ -1,25 +1,95 @@
 <!doctype html>
 <html lang="vi">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HoangMinhOfficial</title>
-<link rel="stylesheet" href="css/style.css">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase.js"></script>
-<script src="js/auth.js" defer></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HoangMinhOfficial</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background:#0d1117;
+      color:#e6eef8;
+      text-align:center;
+      padding:50px;
+    }
+    h1 { margin-bottom:30px; }
+    a.button, button {
+      display:inline-block;
+      padding:15px 30px;
+      margin:10px;
+      background:#238636;
+      color:#fff;
+      border:none;
+      border-radius:8px;
+      font-weight:bold;
+      cursor:pointer;
+    }
+    input {
+      padding:10px;
+      margin:5px;
+      border-radius:6px;
+      border:none;
+      width:220px;
+    }
+  </style>
 </head>
-<body class="dark">
+<body>
+
 <h1>HoangMinhOfficial</h1>
-<div class="card">
-<input id="email" placeholder="Email">
-<input id="pass" type="password" placeholder="Password">
-<button onclick="login()">Đăng nhập</button>
-<button onclick="signup()">Đăng ký</button>
+
+<!-- MENU GỐC -->
+<a class="button" href="tool.html">🔐 Crypto Tool</a>
+<a class="button" href="chat.html">💬 Chat</a>
+
+<hr style="margin:30px 0">
+
+<!-- AUTH ĐƠN GIẢN -->
+<div>
+  <input id="email" placeholder="Email">
+  <br>
+  <input id="password" type="password" placeholder="Password">
+  <br>
+  <button onclick="login()">Đăng nhập</button>
+  <button onclick="signup()">Đăng ký</button>
+  <p id="status"></p>
 </div>
-<div class="menu">
-<a href="chat.html">💬 Chat</a>
-<a href="tool.html">🔐 Crypto Tool</a>
-</div>
-</body></html>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCiroMCXbxEt3_kZ_AcV5nmRW88b7P3R4Y",
+    authDomain: "hoangminhofficial.firebaseapp.com",
+    projectId: "hoangminhofficial",
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  function login() {
+    auth.signInWithEmailAndPassword(
+      email.value,
+      password.value
+    ).then(()=>{
+      status.innerText = "Đăng nhập thành công";
+    }).catch(e=>{
+      status.innerText = e.message;
+    });
+  }
+
+  function signup() {
+    auth.createUserWithEmailAndPassword(
+      email.value,
+      password.value
+    ).then(()=>{
+      status.innerText = "Đăng ký thành công";
+    }).catch(e=>{
+      status.innerText = e.message;
+    });
+  }
+</script>
+
+</body>
+</html>
