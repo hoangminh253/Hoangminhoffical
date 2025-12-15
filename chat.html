@@ -1,106 +1,21 @@
 <!doctype html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Chat</title>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      query,
-      orderBy,
-      onSnapshot,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    // 🔥 CÙNG CONFIG VỚI index.html
-    const firebaseConfig = {
-      apiKey: "AIzaSyCiroMCXbxEt3_kZ_AcV5nmRW88b7P3R4Y",
-      authDomain: "hoangminhofficial.firebaseapp.com",
-      projectId: "hoangminhofficial",
-      storageBucket: "hoangminhofficial.appspot.com",
-      messagingSenderId: "XXXX",
-      appId: "XXXX"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    let currentUser;
-
-    onAuthStateChanged(auth, user => {
-      if (!user) location.href = "index.html";
-      currentUser = user;
-    });
-
-    const q = query(collection(db, "messages"), orderBy("time"));
-
-    onSnapshot(q, snap => {
-      messages.innerHTML = "";
-      snap.forEach(doc => {
-        const m = doc.data();
-        messages.innerHTML += `<p><b>${m.email}</b>: ${m.text}</p>`;
-      });
-      messages.scrollTop = messages.scrollHeight;
-    });
-
-    window.sendMsg = async () => {
-      if (!msg.value) return;
-      await addDoc(collection(db, "messages"), {
-        text: msg.value,
-        uid: currentUser.uid,
-        email: currentUser.email,
-        time: serverTimestamp()
-      });
-      msg.value = "";
-    };
-  </script>
-
-  <style>
-    body {
-      background:#0d1117;
-      color:#e6eef8;
-      font-family:Arial;
-      margin:0;
-      padding:20px;
-    }
-    #messages {
-      height:70vh;
-      overflow-y:auto;
-      background:#161b22;
-      padding:15px;
-      border-radius:10px;
-    }
-    input {
-      width:80%;
-      padding:12px;
-      border-radius:6px;
-      border:none;
-    }
-    button {
-      padding:12px 18px;
-      background:#238636;
-      color:white;
-      border:none;
-      border-radius:6px;
-    }
-  </style>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chat</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
+<script src="js/chat.js" defer></script>
 </head>
-
-<body>
-  <h2>💬 HoangMinh Chat</h2>
-  <div id="messages"></div>
-  <br>
-  <input id="msg" placeholder="Nhập tin nhắn...">
-  <button onclick="sendMsg()">Gửi</button>
-</body>
-</html>
+<body class="dark">
+<div class="layout">
+<aside id="rooms"></aside>
+<main>
+<div id="chat"></div>
+<input id="msg" placeholder="Nhập tin..." oninput="typing()">
+<button onclick="send()">Gửi</button>
+</main>
+</div>
+</body></html>
