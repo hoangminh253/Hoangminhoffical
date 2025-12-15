@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>HoangMinhOfficial</title>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -16,79 +13,151 @@
       text-align:center;
       padding:50px;
     }
-    h1 { margin-bottom:30px; }
-    a.button, button {
+
+    h1 {
+      margin-bottom:30px;
+      letter-spacing:1px;
+    }
+
+    .card {
+      background:#161b22;
+      padding:30px;
+      border-radius:14px;
+      max-width:420px;
+      margin:0 auto;
+      box-shadow:0 10px 30px rgba(0,0,0,.4);
+    }
+
+    input {
+      width:90%;
+      padding:12px;
+      margin:8px 0;
+      border-radius:8px;
+      border:none;
+      background:#0d1117;
+      color:#e6eef8;
+      outline:none;
+    }
+
+    .button {
       display:inline-block;
-      padding:15px 30px;
-      margin:10px;
+      width:90%;
+      padding:14px;
+      margin-top:10px;
       background:#238636;
       color:#fff;
       border:none;
       border-radius:8px;
       font-weight:bold;
       cursor:pointer;
+      transition:.3s;
     }
-    input {
-      padding:10px;
-      margin:5px;
-      border-radius:6px;
-      border:none;
-      width:220px;
+
+    .button:hover { background:#2ea043; }
+
+    .secondary {
+      background:#30363d;
+    }
+
+    .secondary:hover {
+      background:#484f58;
+    }
+
+    .menu a {
+      display:block;
+      margin:12px 0;
+      padding:14px;
+      background:#238636;
+      color:#fff;
+      text-decoration:none;
+      border-radius:8px;
+      font-weight:bold;
+    }
+
+    .menu a:hover { background:#2ea043; }
+
+    .info {
+      margin-top:15px;
+      font-size:14px;
+      color:#8b949e;
     }
   </style>
 </head>
+
 <body>
 
 <h1>HoangMinhOfficial</h1>
 
-<!-- MENU GỐC -->
-<a class="button" href="tool.html">🔐 Crypto Tool</a>
-<a class="button" href="chat.html">💬 Chat</a>
-
-<hr style="margin:30px 0">
-
-<!-- AUTH ĐƠN GIẢN -->
-<div>
-  <input id="email" placeholder="Email">
-  <br>
-  <input id="password" type="password" placeholder="Password">
-  <br>
-  <button onclick="login()">Đăng nhập</button>
-  <button onclick="signup()">Đăng ký</button>
-  <p id="status"></p>
+<!-- AUTH CARD -->
+<div class="card" id="authBox">
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password (≥ 6 ký tự)">
+  <button class="button" onclick="signUp()">Sign Up</button>
+  <button class="button secondary" onclick="signIn()">Sign In</button>
 </div>
 
-<script>
+<!-- MENU CARD -->
+<div class="card menu" id="menu" style="display:none">
+  <a href="tool.html">🔐 Crypto Tool</a>
+  <a href="chat.html">💬 Chat</a>
+  <button class="button secondary" onclick="logout()">Logout</button>
+  <div class="info" id="userInfo"></div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+  import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+
   const firebaseConfig = {
     apiKey: "AIzaSyCiroMCXbxEt3_kZ_AcV5nmRW88b7P3R4Y",
     authDomain: "hoangminhofficial.firebaseapp.com",
-    projectId: "hoangminhofficial",
+    projectId: "hoangminhofficial"
   };
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
 
-  function login() {
-    auth.signInWithEmailAndPassword(
-      email.value,
-      password.value
-    ).then(()=>{
-      status.innerText = "Đăng nhập thành công";
-    }).catch(e=>{
-      status.innerText = e.message;
-    });
-  }
+  window.signUp = async () => {
+    if (password.value.length < 6) {
+      alert("Mật khẩu phải ≥ 6 ký tự");
+      return;
+    }
+    try {
+      await createUserWithEmailAndPassword(auth, email.value, password.value);
+      alert("Tạo tài khoản thành công");
+    } catch {
+      alert("Email đã tồn tại hoặc không hợp lệ");
+    }
+  };
 
-  function signup() {
-    auth.createUserWithEmailAndPassword(
-      email.value,
-      password.value
-    ).then(()=>{
-      status.innerText = "Đăng ký thành công";
-    }).catch(e=>{
-      status.innerText = e.message;
-    });
-  }
+  window.signIn = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email.value, password.value);
+    } catch {
+      alert("Sai email hoặc mật khẩu");
+    }
+  };
+
+  window.logout = () => signOut(auth);
+
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      authBox.style.display = "none";
+      menu.style.display = "block";
+      userInfo.innerText = "Đăng nhập: " + user.email;
+    } else {
+      authBox.style.display = "block";
+      menu.style.display = "none";
+      userInfo.innerText = "";
+    }
+  });
 </script>
 
 </body>
