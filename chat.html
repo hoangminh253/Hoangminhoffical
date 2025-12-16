@@ -1,46 +1,183 @@
 <!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8">
-  <title>Chat | HoangMinhOfficial</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chat</title>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="css/style.css">
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#0d1117;
+  color:#e6edf3;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+}
 
-  <!-- Firebase + Chat logic -->
-  <script type="module" src="js/chat.js" defer></script>
+/* HEADER */
+.header{
+  padding:15px;
+  background:#161b22;
+  text-align:center;
+  font-weight:bold;
+  border-bottom:1px solid #30363d;
+}
+
+/* CHAT AREA */
+#messages{
+  flex:1;
+  padding:15px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* MESSAGE BOX */
+.msg{
+  max-width:70%;
+  padding:12px 14px;
+  border-radius:12px;
+  background:#21262d;
+  font-size:14px;
+  line-height:1.4;
+  word-wrap:break-word;
+}
+
+/* MY MESSAGE */
+.me{
+  align-self:flex-end;
+  background:#238636;
+  color:white;
+}
+
+/* USER EMAIL */
+.sender{
+  font-size:11px;
+  opacity:.7;
+  margin-bottom:4px;
+}
+
+/* INPUT BAR */
+.inputBar{
+  display:flex;
+  padding:10px;
+  background:#161b22;
+  border-top:1px solid #30363d;
+}
+
+input{
+  flex:1;
+  padding:12px;
+  border-radius:8px;
+  border:none;
+  background:#0d1117;
+  color:#e6edf3;
+  outline:none;
+}
+
+button{
+  margin-left:10px;
+  padding:12px 18px;
+  border:none;
+  border-radius:8px;
+  background:#238636;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:hover{
+  background:#2ea043;
+}
+</style>
 </head>
 
 <body>
-  <div class="chat-app">
 
-    <!-- HEADER -->
-    <header class="chat-header">
-      <span>💬 HoangMinhOfficial Chat</span>
-      <button id="logout">Đăng xuất</button>
-    </header>
+<div class="header">💬 Global Chat</div>
 
-    <!-- MESSAGE LIST -->
-    <main id="messages" class="chat-messages">
-      <!-- Tin nhắn render ở đây -->
-    </main>
+<div id="messages"></div>
 
-    <!-- INPUT -->
-    <footer class="chat-input">
-      <input type="file" id="upload" hidden>
-      <button id="imgBtn">📷</button>
+<div class="inputBar">
+  <input id="text" placeholder="Nhập tin nhắn..." autocomplete="off">
+  <button onclick="send()">Gửi</button>
+</div>
 
-      <input
-        id="msg"
-        type="text"
-        placeholder="Nhập tin nhắn..."
-        autocomplete="off"
-      >
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-      <button id="send">➤</button>
-    </footer>
+const firebaseConfig = {
+  apiKey: "AIzaSyCiroMCXbxEt3_kZ_AcV5nmRW88b7P3R4Y",
+  authDomain: "hoangminhofficial.firebaseapp.com",
+  projectId: "hoangminhofficial"
+};
 
-  </div>
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+
+onAuthStateChanged(auth, user=>{
+  if(!user){
+    location.href="index.html";
+  }else{
+    currentUser = user;
+    loadChat();
+  }
+});
+
+function loadChat(){
+  const q = query(
+    collection(db,"messages"),
+    orderBy("time","asc")
+  );
+
+  onSnapshot(q, snap=>{
+    messages.innerHTML="";
+    snap.forEach(doc=>{
+      const d = doc.data();
+      const div = document.createElement("div");
+      div.className = "msg" + (d.uid === currentUser.uid ? " me":"");
+
+      div.innerHTML = `
+        <div class="sender">${d.email}</div>
+        ${d.text}
+      `;
+
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    });
+  });
+}
+
+window.send = async ()=>{
+  if(text.value.trim()==="") return;
+
+  await addDoc(collection(db,"messages"),{
+    text:text.value,
+    uid:currentUser.uid,
+    email:currentUser.email,
+    time:serverTimestamp()
+  });
+
+  text.value="";
+};
+</script>
+
 </body>
 </html>
