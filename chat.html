@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Chat | HoangMinhOfficial</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Firebase + Chat logic -->
+  <script type="module" src="js/chat.js" defer></script>
+</head>
+
+<body>
+  <div class="chat-app">
+
+    <!-- HEADER -->
+    <header class="chat-header">
+      <span>💬 HoangMinhOfficial Chat</span>
+      <button id="logout">Đăng xuất</button>
+    </header>
+
+    <!-- MESSAGE LIST -->
+    <main id="messages" class="chat-messages">
+      <!-- Tin nhắn render ở đây -->
+    </main>
+
+    <!-- INPUT -->
+    <footer class="chat-input">
+      <input type="file" id="upload" hidden>
+      <button id="imgBtn">📷</button>
+
+      <input
+        id="msg"
+        type="text"
+        placeholder="Nhập tin nhắn..."
+        autocomplete="off"
+      >
+
+      <button id="send">➤</button>
+    </footer>
+
+  </div>
+</body>
+</html>
