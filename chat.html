@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Chat</title>
+<title>HoangMinhOfficial Chat</title>
 
 <style>
 body{
@@ -16,51 +16,61 @@ body{
   height:100vh;
 }
 
-/* HEADER */
 .header{
-  padding:15px;
+  padding:14px;
   background:#161b22;
   text-align:center;
   font-weight:bold;
   border-bottom:1px solid #30363d;
 }
 
-/* CHAT AREA */
 #messages{
   flex:1;
-  padding:15px;
+  padding:16px;
   overflow-y:auto;
   display:flex;
   flex-direction:column;
   gap:10px;
 }
 
-/* MESSAGE BOX */
 .msg{
   max-width:70%;
   padding:12px 14px;
-  border-radius:12px;
+  border-radius:14px;
   background:#21262d;
   font-size:14px;
-  line-height:1.4;
+  position:relative;
   word-wrap:break-word;
 }
 
-/* MY MESSAGE */
 .me{
   align-self:flex-end;
   background:#238636;
   color:white;
 }
 
-/* USER EMAIL */
 .sender{
   font-size:11px;
   opacity:.7;
   margin-bottom:4px;
 }
 
-/* INPUT BAR */
+.delete{
+  position:absolute;
+  top:6px;
+  right:8px;
+  cursor:pointer;
+  font-size:12px;
+  opacity:.6;
+}
+.delete:hover{opacity:1}
+
+#typing{
+  font-size:12px;
+  color:#8b949e;
+  padding:4px 16px;
+}
+
 .inputBar{
   display:flex;
   padding:10px;
@@ -89,35 +99,54 @@ button{
   cursor:pointer;
 }
 
-button:hover{
-  background:#2ea043;
+/* ONLINE BOX */
+.onlineBox{
+  position:fixed;
+  top:12px;
+  left:12px;
+  background:#161b22;
+  border:1px solid #30363d;
+  border-radius:10px;
+  padding:10px;
+  width:180px;
+  font-size:13px;
+  box-shadow:0 8px 20px rgba(0,0,0,.4);
+}
+.onlineBox h4{
+  margin:0 0 8px;
+  font-size:13px;
+  color:#8b949e;
+}
+.onlineUser{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">💬 Global Chat</div>
+<div class="onlineBox">
+  <h4>🟢 Online</h4>
+  <div id="onlineList"></div>
+</div>
 
+<div class="header">💬 Global Chat</div>
 <div id="messages"></div>
+<div id="typing"></div>
 
 <div class="inputBar">
-  <input id="text" placeholder="Nhập tin nhắn..." autocomplete="off">
+  <input id="text" placeholder="Nhập tin nhắn...">
   <button onclick="send()">Gửi</button>
 </div>
 
-<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 import {
-  getFirestore,
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  serverTimestamp
+  getFirestore, collection, addDoc, query, orderBy,
+  onSnapshot, serverTimestamp, deleteDoc, doc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -126,57 +155,101 @@ const firebaseConfig = {
   projectId: "hoangminhofficial"
 };
 
+const ADMIN = "minhminh2532013@gmail.com";
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let currentUser = null;
+let user=null;
 
-onAuthStateChanged(auth, user=>{
-  if(!user){
-    location.href="index.html";
-  }else{
-    currentUser = user;
-    loadChat();
-  }
-});
+onAuthStateChanged(auth,u=>{
+  if(!u){ location.href="index.html"; return; }
+  user=u;
 
-function loadChat(){
-  const q = query(
-    collection(db,"messages"),
-    orderBy("time","asc")
-  );
-
-  onSnapshot(q, snap=>{
-    messages.innerHTML="";
-    snap.forEach(doc=>{
-      const d = doc.data();
-      const div = document.createElement("div");
-      div.className = "msg" + (d.uid === currentUser.uid ? " me":"");
-
-      div.innerHTML = `
-        <div class="sender">${d.email}</div>
-        ${d.text}
-      `;
-
-      messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
-    });
-  });
-}
-
-window.send = async ()=>{
-  if(text.value.trim()==="") return;
-
-  await addDoc(collection(db,"messages"),{
-    text:text.value,
-    uid:currentUser.uid,
-    email:currentUser.email,
+  setDoc(doc(db,"online",user.uid),{
+    email:user.email,
     time:serverTimestamp()
   });
 
+  loadMessages();
+  watchTyping();
+  watchOnline();
+});
+
+window.addEventListener("beforeunload",()=>{
+  if(user){
+    deleteDoc(doc(db,"online",user.uid));
+  }
+});
+
+function loadMessages(){
+  const q=query(collection(db,"messages"),orderBy("time","asc"));
+  onSnapshot(q,snap=>{
+    messages.innerHTML="";
+    snap.forEach(d=>{
+      const m=d.data();
+      const div=document.createElement("div");
+      div.className="msg"+(m.uid===user.uid?" me":"");
+      div.innerHTML=`
+        <div class="sender">${m.email}</div>
+        ${m.text}
+        ${user.email===ADMIN?`<div class="delete">🗑</div>`:""}
+      `;
+      if(user.email===ADMIN){
+        div.querySelector(".delete")?.addEventListener("click",()=>{
+          deleteDoc(doc(db,"messages",d.id));
+        });
+      }
+      messages.appendChild(div);
+    });
+    messages.scrollTop=messages.scrollHeight;
+  });
+}
+
+window.send=async()=>{
+  if(!text.value.trim()) return;
+  await addDoc(collection(db,"messages"),{
+    text:text.value,
+    uid:user.uid,
+    email:user.email,
+    time:serverTimestamp()
+  });
   text.value="";
+  setTyping("");
 };
+
+text.addEventListener("input",()=>{
+  setTyping(user.email);
+});
+
+function setTyping(email){
+  setDoc(doc(db,"typing","global"),{
+    email,
+    time:serverTimestamp()
+  });
+}
+
+function watchTyping(){
+  onSnapshot(doc(db,"typing","global"),snap=>{
+    const d=snap.data();
+    if(d && d.email && d.email!==user.email){
+      typing.innerText=d.email+" đang nhập...";
+    } else typing.innerText="";
+  });
+}
+
+function watchOnline(){
+  onSnapshot(collection(db,"online"),snap=>{
+    onlineList.innerHTML="";
+    snap.forEach(d=>{
+      const div=document.createElement("div");
+      div.className="onlineUser";
+      div.innerText="• "+d.data().email;
+      onlineList.appendChild(div);
+    });
+  });
+}
 </script>
 
 </body>
