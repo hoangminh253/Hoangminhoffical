@@ -72,6 +72,7 @@
       text-decoration:none;
       border-radius:8px;
       font-weight:bold;
+      cursor:pointer;
     }
 
     .menu a:hover { background:#2ea043; }
@@ -99,7 +100,7 @@
 <!-- MENU CARD -->
 <div class="card menu" id="menu" style="display:none">
   <a href="tool.html">🔐 Crypto Tool</a>
-  <a href="chat.html">💬 Chat</a>
+  <a onclick="goChat()">💬 Chat</a>
   <button class="button secondary" onclick="logout()">Logout</button>
   <div class="info" id="userInfo"></div>
 </div>
@@ -145,7 +146,17 @@
     }
   };
 
-  window.logout = () => signOut(auth);
+  window.logout = async () => {
+    await signOut(auth);
+  };
+
+  window.goChat = () => {
+    if (!auth.currentUser) {
+      alert("Bạn cần đăng nhập để vào chat");
+      return;
+    }
+    location.href = "chat.html";
+  };
 
   onAuthStateChanged(auth, user => {
     if (user) {
