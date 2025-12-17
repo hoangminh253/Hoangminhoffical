@@ -1,3 +1,3 @@
 # Hoangminhofficial
-My own web
+My website
 https://hoangminhoffical.pages.dev/
